@@ -60,9 +60,14 @@ export const ResultsDialog: React.FC<ResultsDialogProps> = ({
       emojiRows.push(rowEmojis);
     }
 
-    return [`D20 #${gameNumber}`, `Score: ${scoreStr}`, "", ...emojiRows].join(
-      "\n"
-    );
+    return [
+      `D20 #${gameNumber}`,
+      `Score: ${scoreStr}`,
+      "",
+      ...emojiRows,
+      "",
+      "Try to beat my score at https://d20.jbat.ch",
+    ].join("\n");
   };
 
   const handleShare = async (): Promise<void> => {
