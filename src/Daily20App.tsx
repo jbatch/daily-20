@@ -4,16 +4,21 @@ import { NumberDisplay } from "./NumberDisplay";
 import { GameGrid } from "./GameGrid";
 import { ResultsDialog } from "./ResultsDialog";
 
-// Game configuration
-const TOTAL_NUMBERS = 20; // Changed from 20 for testing
+const TOTAL_NUMBERS = 20;
 
-// Simple seeded random number generator
 function seededRandom(seed: number) {
   const x = Math.sin(seed++) * 10000;
   return x - Math.floor(x);
 }
 
-const D20Game = () => {
+const getGameNumber = (date: Date): number => {
+  const startDate = new Date("2025-01-29");
+  const diffTime = date.getTime() - startDate.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays + 1; // Add 1 since we want Jan 29 to be #1
+};
+
+export const Daily20App = () => {
   const [currentNumber, setCurrentNumber] = useState<number | null>(null);
   const [placedNumbers, setPlacedNumbers] = useState<Array<number | null>>(
     Array(TOTAL_NUMBERS).fill(null)
@@ -23,6 +28,7 @@ const D20Game = () => {
   const [showResults, setShowResults] = useState(false);
   const [isRevealing, setIsRevealing] = useState(false);
   const [evaluatedScores, setEvaluatedScores] = useState<number[]>([]);
+  const [gameComplete, setGameComplete] = useState(false);
 
   // Initialize the game with seeded random numbers
   useEffect(() => {
@@ -30,7 +36,6 @@ const D20Game = () => {
     const dateStr = date.toISOString().split("T")[0];
     const seed = parseInt(dateStr.replace(/-/g, ""));
 
-    // Generate numbers for the game
     const numbers = Array(TOTAL_NUMBERS)
       .fill(0)
       .map((_, i) => Math.floor(seededRandom(seed + i) * 999) + 1);
@@ -39,33 +44,29 @@ const D20Game = () => {
   }, []);
 
   const evaluatePlacements = (finalNumbers: (number | null)[]) => {
-    // Create a mapping of number to its correct position
     const sortedNumbers = [...numberQueue].sort((a, b) => a - b);
     const correctPositions = new Map(
       sortedNumbers.map((num, index) => [num, index])
     );
 
-    // Calculate how far each number is from its ideal position
-    const scores = finalNumbers.map((num, currentPos) => {
+    return finalNumbers.map((num, currentPos) => {
       if (num === null) return 0;
       const correctPos = correctPositions.get(num)!;
       const maxDistance = TOTAL_NUMBERS - 1;
       const distance = Math.abs(currentPos - correctPos);
-      return 1 - distance / maxDistance; // 1 = perfect, 0 = worst possible
+      return 1 - distance / maxDistance;
     });
-
-    return scores;
   };
 
   const handleGameComplete = (finalNumbers: (number | null)[]) => {
     const scores = evaluatePlacements(finalNumbers);
     setEvaluatedScores(scores);
     setIsRevealing(true);
+    setGameComplete(true);
 
-    // Show the results dialog after the animation
     setTimeout(() => {
       setShowResults(true);
-    }, scores.length * 500 + 500); // Wait for all cells to animate plus a bit extra
+    }, scores.length * 500 + 500);
   };
 
   const handleCellClick = (index: number) => {
@@ -102,6 +103,10 @@ const D20Game = () => {
     return Math.floor(100 * (sum / evaluatedScores.length));
   };
 
+  const handleShareClick = () => {
+    setShowResults(true);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4">
       <ResultsDialog
@@ -111,9 +116,16 @@ const D20Game = () => {
         total={TOTAL_NUMBERS}
         score={calculateFinalScore()}
         evaluatedScores={evaluatedScores}
+        date={new Date().toISOString().split("T")[0]}
       />
 
-      <Header onStatsClick={() => {}} onShareClick={() => {}} />
+      <Header
+        onStatsClick={() => {}}
+        onShareClick={handleShareClick}
+        day={getGameNumber(new Date())}
+        showShare={gameComplete}
+        statsEnabled={false}
+      />
 
       <NumberDisplay currentNumber={currentNumber} />
 
@@ -126,5 +138,3 @@ const D20Game = () => {
     </div>
   );
 };
-
-export default D20Game;

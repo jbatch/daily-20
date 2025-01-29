@@ -91,7 +91,7 @@ export const ResultsDialog: React.FC<ResultsDialogProps> = ({
           <DialogDescription asChild>
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b pb-2">
-                <span>Numbers in sequence:</span>
+                <span>Numbers perfect placements:</span>
                 <span className="font-mono font-bold">
                   {correctPlacements}/{total}
                 </span>
