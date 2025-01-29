@@ -27,4 +27,4 @@ jobs:
       - name: Build the D20 Docker image
         run: |
           docker build . --tag ghcr.io/jbatch/daily-20:latest
-          docker push ghcr.io/jbatch/daily20:latest
+          docker push ghcr.io/jbatch/daily-20:latest
