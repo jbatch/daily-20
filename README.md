@@ -1,50 +1,84 @@
-# React + TypeScript + Vite
+# D20 Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A daily number placement puzzle game where players strategically place random numbers (1-999) into a 20-cell grid to create the longest possible ascending sequence. Each day presents a new puzzle that's the same for all players worldwide.
 
-Currently, two official plugins are available:
+## 🎮 Gameplay
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Every day, you'll receive 20 random numbers between 1 and 999
+- Numbers appear one at a time
+- Place each number in the grid strategically
+- Your goal is to create the longest possible ascending sequence
+- Numbers can form ascending sequences in any direction
+- Your score is based on how close each number is to its optimal position
 
-## Expanding the ESLint configuration
+## 🛠️ Technical Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+- [Vite](https://vitejs.dev/) - Build tool and development server
+- [React](https://reactjs.org/) + [TypeScript](https://www.typescriptlang.org/) - Frontend framework
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [shadcn/ui](https://ui.shadcn.com/) - Re-usable components
+- Local Storage - Data persistence
 
-- Configure the top-level `parserOptions` property like this:
+## 🚀 Getting Started
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+1. Clone the repository:
+
+```bash
+git clone https://github.com/jbatch/daily-20.git
+cd daily-20
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+2. Install dependencies:
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```bash
+yarn
 ```
+
+3. Start the development server:
+
+```bash
+yarn dev
+```
+
+4. Build for production:
+
+```bash
+yarn build
+```
+
+## 🎯 Key Features
+
+### Daily Puzzles
+
+- Consistent puzzle generation using date-based seeding
+- Same sequence of numbers for all players on a given day
+- New puzzle available every day at midnight
+
+### Scoring System
+
+- Tracks the optimal placement of each number
+- Calculates score based on position accuracy
+- Visual feedback through color-coding
+- Maintains player statistics and streaks
+
+### Share Functionality
+
+Players can share their daily results with an emoji grid:
+
+```
+D20 #123
+Score: 85/100
+
+🟩🟨🟨🟥
+🟨🟩🟨🟧
+🟩🟩🟨🟨
+🟨🟧🟥🟥
+```
+
+### Local Storage
+
+- Saves daily scores and progress
+- Tracks current and maximum streaks
+- Records total games played
+- Maintains score distribution
+- Stores player placement history
