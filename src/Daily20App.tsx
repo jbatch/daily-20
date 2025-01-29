@@ -66,7 +66,7 @@ export const Daily20App = () => {
 
     setTimeout(() => {
       setShowResults(true);
-    }, scores.length * 500 + 500);
+    }, scores.length * 300);
   };
 
   const handleCellClick = (index: number) => {
