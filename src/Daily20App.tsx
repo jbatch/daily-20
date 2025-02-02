@@ -3,73 +3,94 @@ import { Header } from "./Header";
 import { NumberDisplay } from "./NumberDisplay";
 import { GameGrid } from "./GameGrid";
 import { ResultsDialog } from "./ResultsDialog";
+import { generateDailyNumbers } from "./random-utils";
 
 const TOTAL_NUMBERS = 20;
+const START_DATE = "2025-01-29";
 
-function seededRandom(seed: number) {
-  const x = Math.sin(seed++) * 10000;
-  return x - Math.floor(x);
-}
+type GameState = {
+  currentNumber: number | null;
+  placedNumbers: Array<number | null>;
+  numberQueue: number[];
+  currentIndex: number;
+  isRevealing: boolean;
+  evaluatedScores: number[];
+  gameComplete: boolean;
+  showResults: boolean;
+};
 
 const getGameNumber = (date: Date): number => {
-  const startDate = new Date("2025-01-29");
+  const startDate = new Date(START_DATE);
   const diffTime = date.getTime() - startDate.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   return diffDays + 1; // Add 1 since we want Jan 29 to be #1
 };
 
-export const Daily20App = () => {
-  const [currentNumber, setCurrentNumber] = useState<number | null>(null);
-  const [placedNumbers, setPlacedNumbers] = useState<Array<number | null>>(
-    Array(TOTAL_NUMBERS).fill(null)
+const evaluatePlacements = (
+  finalNumbers: Array<number | null>,
+  numberQueue: number[]
+): number[] => {
+  const sortedNumbers = [...numberQueue].sort((a, b) => a - b);
+  const correctPositions = new Map(
+    sortedNumbers.map((num, index) => [num, index])
   );
-  const [numberQueue, setNumberQueue] = useState<number[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [showResults, setShowResults] = useState(false);
-  const [isRevealing, setIsRevealing] = useState(false);
-  const [evaluatedScores, setEvaluatedScores] = useState<number[]>([]);
-  const [gameComplete, setGameComplete] = useState(false);
 
-  // Initialize the game with seeded random numbers
+  return finalNumbers.map((num, currentPos) => {
+    if (num === null) return 0;
+    const correctPos = correctPositions.get(num)!;
+    const maxDistance = TOTAL_NUMBERS - 1;
+    const distance = Math.abs(currentPos - correctPos);
+    return 1 - distance / maxDistance;
+  });
+};
+
+export const Daily20App = () => {
+  const [gameState, setGameState] = useState<GameState>({
+    currentNumber: null,
+    placedNumbers: Array(TOTAL_NUMBERS).fill(null),
+    numberQueue: [],
+    currentIndex: 0,
+    isRevealing: false,
+    evaluatedScores: [],
+    gameComplete: false,
+    showResults: false,
+  });
+
+  // Initialize game with daily numbers
   useEffect(() => {
-    const date = new Date();
-    const dateStr = date.toISOString().split("T")[0];
-    const seed = parseInt(dateStr.replace(/-/g, ""));
+    const dateStr = new Date().toISOString().split("T")[0];
+    const numbers = generateDailyNumbers(dateStr, TOTAL_NUMBERS);
 
-    const numbers = Array(TOTAL_NUMBERS)
-      .fill(0)
-      .map((_, i) => Math.floor(seededRandom(seed + i) * 999) + 1);
-    setNumberQueue(numbers);
-    setCurrentNumber(numbers[0]);
+    setGameState((prev) => ({
+      ...prev,
+      numberQueue: numbers,
+      currentNumber: numbers[0],
+    }));
   }, []);
 
-  const evaluatePlacements = (finalNumbers: (number | null)[]) => {
-    const sortedNumbers = [...numberQueue].sort((a, b) => a - b);
-    const correctPositions = new Map(
-      sortedNumbers.map((num, index) => [num, index])
-    );
+  const handleGameComplete = (finalNumbers: Array<number | null>) => {
+    const scores = evaluatePlacements(finalNumbers, gameState.numberQueue);
 
-    return finalNumbers.map((num, currentPos) => {
-      if (num === null) return 0;
-      const correctPos = correctPositions.get(num)!;
-      const maxDistance = TOTAL_NUMBERS - 1;
-      const distance = Math.abs(currentPos - correctPos);
-      return 1 - distance / maxDistance;
-    });
-  };
+    setGameState((prev) => ({
+      ...prev,
+      evaluatedScores: scores,
+      isRevealing: true,
+      gameComplete: true,
+    }));
 
-  const handleGameComplete = (finalNumbers: (number | null)[]) => {
-    const scores = evaluatePlacements(finalNumbers);
-    setEvaluatedScores(scores);
-    setIsRevealing(true);
-    setGameComplete(true);
-
+    // Show results dialog after reveal animation
     setTimeout(() => {
-      setShowResults(true);
+      setGameState((prev) => ({
+        ...prev,
+        showResults: true,
+      }));
     }, scores.length * 300);
   };
 
   const handleCellClick = (index: number) => {
+    const { currentNumber, placedNumbers, currentIndex, numberQueue } =
+      gameState;
+
     if (
       placedNumbers[index] !== null ||
       currentNumber === null ||
@@ -80,42 +101,58 @@ export const Daily20App = () => {
 
     const newPlacedNumbers = [...placedNumbers];
     newPlacedNumbers[index] = currentNumber;
-    setPlacedNumbers(newPlacedNumbers);
 
     const nextIndex = currentIndex + 1;
-    setCurrentIndex(nextIndex);
+    const nextState = {
+      ...gameState,
+      placedNumbers: newPlacedNumbers,
+      currentIndex: nextIndex,
+    };
 
     if (nextIndex === TOTAL_NUMBERS) {
-      setCurrentNumber(null);
+      nextState.currentNumber = null;
+      setGameState(nextState);
       handleGameComplete(newPlacedNumbers);
     } else {
-      setCurrentNumber(numberQueue[nextIndex]);
+      nextState.currentNumber = numberQueue[nextIndex];
+      setGameState(nextState);
     }
   };
 
-  const countCorrectPlacements = () => {
-    return evaluatedScores.filter((score) => score === 1).length;
+  const countCorrectPlacements = (): number => {
+    return gameState.evaluatedScores.filter((score) => score === 1).length;
   };
 
-  const calculateFinalScore = () => {
+  const calculateFinalScore = (): number => {
+    const { evaluatedScores } = gameState;
     if (evaluatedScores.length === 0) return 0;
     const sum = evaluatedScores.reduce((acc, score) => acc + score, 0);
     return Math.floor(100 * (sum / evaluatedScores.length));
   };
 
   const handleShareClick = () => {
-    setShowResults(true);
+    setGameState((prev) => ({
+      ...prev,
+      showResults: true,
+    }));
+  };
+
+  const handleResultsDialogChange = (open: boolean) => {
+    setGameState((prev) => ({
+      ...prev,
+      showResults: open,
+    }));
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col items-center p-4">
       <ResultsDialog
-        open={showResults}
-        onOpenChange={setShowResults}
+        open={gameState.showResults}
+        onOpenChange={handleResultsDialogChange}
         correctPlacements={countCorrectPlacements()}
         total={TOTAL_NUMBERS}
         score={calculateFinalScore()}
-        evaluatedScores={evaluatedScores}
+        evaluatedScores={gameState.evaluatedScores}
         date={new Date().toISOString().split("T")[0]}
       />
 
@@ -123,17 +160,17 @@ export const Daily20App = () => {
         onStatsClick={() => {}}
         onShareClick={handleShareClick}
         day={getGameNumber(new Date())}
-        showShare={gameComplete}
+        showShare={gameState.gameComplete}
         statsEnabled={false}
       />
 
-      <NumberDisplay currentNumber={currentNumber} />
+      <NumberDisplay currentNumber={gameState.currentNumber} />
 
       <GameGrid
-        placedNumbers={placedNumbers}
+        placedNumbers={gameState.placedNumbers}
         onCellClick={handleCellClick}
-        isRevealing={isRevealing}
-        evaluatedScores={evaluatedScores}
+        isRevealing={gameState.isRevealing}
+        evaluatedScores={gameState.evaluatedScores}
       />
     </div>
   );

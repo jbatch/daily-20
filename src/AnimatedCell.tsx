@@ -36,16 +36,16 @@ export const AnimatedCell: React.FC<AnimatedCellProps> = ({
 
   return (
     <div
-      className={`aspect-square rounded-lg border flex items-center justify-center text-2xl font-bold
+      className={`aspect-square rounded-lg border flex flex-col items-center justify-center
         transition-all duration-300 ease-out
       `}
       style={{
         backgroundColor: getColor(score),
-        opacity: 0.8, // Increased opacity
+        opacity: 0.8,
         textShadow: "0 1px 3px rgba(0,0,0,0.3)",
       }}
     >
-      {number}
+      <span className="text-2xl font-bold">{number}</span>
     </div>
   );
 };
